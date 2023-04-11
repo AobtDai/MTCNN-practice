@@ -1,0 +1,14 @@
+MTCNN:
+  Anno:
+    origin_anno_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/dataset/widerface/wider_face_split/wider_face_train_bbx_gt.txt"
+    anno_train_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/anno_store/anno_train.txt"
+    image_path_prefix: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/dataset/widerface/WIDER_train/images"
+    pnet_anno_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/anno_store/anno_train_pnet.txt"
+    pnet_posimg_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/processed_data/PNet/pos"
+    pnet_negimg_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/processed_data/PNet/neg"
+    pnet_parimg_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/processed_data/PNet/par"
+
+  Train:
+    
+  Val:  
+  
