@@ -2,6 +2,36 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+class LossFn():
+    def __init__(self):
+        self.loss_cls = nn.BCELoss() # binary cross entropy
+        # self.loss_cls = nn.CrossEntropyLoss() # binary cross entropy
+        self.loss_bbox = nn.MSELoss() # mean square error
+    
+    def cls_loss(self, pred_tensor, label_tensor):
+        # print("Shape1: ",pred_tensor.shape)
+        pred_tensor = torch.squeeze(pred_tensor)
+        # print("Shape2: ",pred_tensor.shape)
+        label_tensor = torch.squeeze(label_tensor)
+        # print("Data2: ",label_tensor.data)
+        mask_tensor = torch.ge(label_tensor, 0) # abandon par_img
+        valid_pred = torch.masked_select(pred_tensor, mask_tensor).float()
+        vaild_label = torch.masked_select(label_tensor, mask_tensor).float()
+        return self.loss_cls(valid_pred, vaild_label)
+
+    def bbox_loss(self, pred_tensor, label_tensor, offset_tensor):
+        pred_tensor = torch.squeeze(pred_tensor)
+        label_tensor = torch.squeeze(label_tensor)
+        offset_tensor = torch.squeeze(offset_tensor)
+        mask_tensor = label_tensor.eq(0).eq(0)
+        valid_index = torch.nonzero(mask_tensor)
+        valid_index = torch.squeeze(valid_index)
+        valid_pred = pred_tensor[valid_index, :]
+        valid_offset = offset_tensor[valid_index, :]
+        return self.loss_bbox(valid_pred, valid_offset)
+
+
 class PNet(nn.Module):
     r""" PNet """
     def __init__(self):
@@ -19,14 +49,14 @@ class PNet(nn.Module):
         self.conv_cls = nn.Conv2d(32, 1, kernel_size=1, stride=1)
         self.conv_bbox = nn.Conv2d(32, 4, kernel_size=1, stride=1)
         self.conv_lmk = nn.Conv2d(32, 10, kernel_size=1, stride=1)
-        # need weight init?
     
     def forward(self, x):
         x = self.pre_layer(x)
-        cls = F.sigmoid(self.conv_cls(x))
+        cls = torch.sigmoid(self.conv_cls(x))
         bbox_offset = self.conv_bbox(x)
-        lmk_offset = self.conv_lmk(x)
-        return cls, bbox_offset, lmk_offset
+        # lmk_offset = self.conv_lmk(x)
+        # return cls, bbox_offset, lmk_offset
+        return cls, bbox_offset
     
 
 
@@ -62,7 +92,7 @@ class RNet(nn.Module):
         x = x.view(x.size(0), -1) #???
         x = self.pre_linear_layer(x)
 
-        cls = F.sigmoid(self.conv_cls(x))
+        cls = torch.sigmoid(self.conv_cls(x))
         bbox = self.conv_bbox(x)
         lmk = self.conv_lmk(x)
 
@@ -105,7 +135,7 @@ class ONet(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.pre_linear_layer(x)
 
-        cls = F.sigmoid(self.conv_cls(x))
+        cls = torch.sigmoid(self.conv_cls(x))
         bbox = self.conv_bbox(x)
         lmk = self.conv_lmk(x)
 
