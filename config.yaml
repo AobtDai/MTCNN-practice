@@ -1,8 +1,9 @@
 MTCNN:
   Anno:
     origin_anno_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/dataset/widerface/wider_face_split/wider_face_train_bbx_gt.txt"
-    anno_train_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/anno_store/anno_train.txt"
+    anno_train_path: "../anno_store/anno_train.txt"
     image_path_prefix: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/dataset/widerface/WIDER_train/images"
+    
     pnet_anno_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/anno_store/anno_tot_pnet.txt"
     pnet_anno_train_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/anno_store/anno_train_pnet.txt"
     pnet_anno_val_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/anno_store/anno_val_pnet.txt"
@@ -10,15 +11,30 @@ MTCNN:
     pnet_negimg_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/processed_data/PNet/neg"
     pnet_parimg_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/processed_data/PNet/par"
 
+    rnet_anno_path: "../anno_store/anno_tot_rnet.txt"
+    rnet_anno_train_path: "../anno_store/anno_train_rnet.txt"
+    rnet_anno_val_path: "../anno_store/anno_val_rnet.txt"
+    rnet_posimg_path: "../processed_data/RNet/pos"
+    rnet_negimg_path: "../processed_data/RNet/neg"
+    rnet_parimg_path: "../processed_data/RNet/par"
+
   Train:
     P_annotation_train_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/anno_store/anno_train_pnet.txt"
+    R_annotation_train_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/anno_store/anno_train_rnet.txt"
+    
     epochs: 10
     lr: 0.0001
     batch_size: 64
     P_is_load: True
+    R_is_load: False
+    
     P_load_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/model/MTCNN_Pnet01.pth"
     P_save_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/model/MTCNN_Pnet01.pth"
+    
+    R_load_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/model/MTCNN_Rnet01.pth"
+    R_save_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/model/MTCNN_Rnet01.pth"
 
   Val:  
     P_annotation_val_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/anno_store/anno_val_pnet.txt"
+    R_annotation_val_path: "C:/Users/25705/Downloads/documents/fdu/1.6/CV/PJ/Face-Recog/mtcnn/anno_store/anno_val_rnet.txt"
   
