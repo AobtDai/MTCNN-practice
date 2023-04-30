@@ -84,7 +84,7 @@ class RNet(nn.Module):
 
         self.conv_cls = nn.Linear(128, 1)
         self.conv_bbox = nn.Linear(128, 4)
-        self.conv_lmk = nn.Linear(128, 10)
+        # self.conv_lmk = nn.Linear(128, 10)
         # need weight init?
 
     def forward(self, x):
@@ -94,9 +94,9 @@ class RNet(nn.Module):
 
         cls = torch.sigmoid(self.conv_cls(x))
         bbox = self.conv_bbox(x)
-        lmk = self.conv_lmk(x)
+        # lmk = self.conv_lmk(x)
 
-        return cls, bbox, lmk
+        return cls, bbox
 
     
 

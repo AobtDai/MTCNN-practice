@@ -13,11 +13,11 @@ import torchvision.transforms as transforms
 
 sys.path.append("..")
 from utils import GetIoU_t, GetNMS
-from model.ConvModels import PNet
+from model.ConvModels import PNet, RNet
 from train.PDataset import PDatasetDetect
 
 
-parser = argparse.ArgumentParser(description='MTCNN RNet Data Annotation Preparing')
+parser = argparse.ArgumentParser(description='MTCNN ONet Data Annotation Preparing')
 parser.add_argument("--config_path", type=str, default="../config.yaml")
 args = parser.parse_args()
 config_path =args.config_path
@@ -28,23 +28,23 @@ train_config = config["MTCNN"]["Train"]
 
 anno_train_path = anno_config["anno_train_path"]
 image_path_prefix = anno_config["image_path_prefix"]
-rnet_anno_path = anno_config["rnet_anno_path"]
-rnet_posimg_path = anno_config["rnet_posimg_path"]
-rnet_parimg_path = anno_config["rnet_parimg_path"]
-rnet_negimg_path = anno_config["rnet_negimg_path"]
-pos_num = 0 ## 
-neg_num = 0 ##
-par_num = 0 ##
-RNet_data_file = open(rnet_anno_path, "a")
+onet_anno_path = anno_config["onet_anno_path"]
+onet_posimg_path = anno_config["onet_posimg_path"]
+onet_parimg_path = anno_config["onet_parimg_path"]
+onet_negimg_path = anno_config["onet_negimg_path"]
+pos_num = 0
+neg_num = 0
+par_num = 0
+ONet_data_file = open(onet_anno_path, "w")
 P_model_path = train_config["P_load_path"]
+R_model_path = train_config["R_load_path"]
 # P_anno_train_path = train_config["P_annotation_train_path"]
 
 
-def GenerateBBox(cls_tensor, bbox_tensor, scale): ## ????
+def GenerateBBox(cls_tensor, bbox_tensor, scale):
     ksize = 12 # pnet likes a 12*12 kernel
     stride = 2 # multiple all the strides in pnet
-    # x, y = torch.where(cls_tensor > 0.7) # 0.7 is threshold
-    x, y = torch.where(cls_tensor > 0.7) # 0.7 is threshold
+    x, y = torch.where(cls_tensor > 0.6) # 0.6 is threshold
     if x.shape[0] == 0:
         return torch.tensor([])
     dx1, dy1, dx2, dy2 = [bbox_tensor[i, x, y] for i in range(4)]
@@ -52,10 +52,10 @@ def GenerateBBox(cls_tensor, bbox_tensor, scale): ## ????
     # print(bbox_tensor.shape) #[4, ?]
     score = cls_tensor[x, y]
     # print(score.shape)
-    bbox = torch.stack([torch.round((stride * y)/scale), 
-                        torch.round((stride * x)/scale),
-                        torch.round((stride * y + ksize)/scale),
+    bbox = torch.stack([torch.round((stride * x)/scale), 
+                        torch.round((stride * y)/scale),
                         torch.round((stride * x + ksize)/scale),
+                        torch.round((stride * y + ksize)/scale),
                         score,
                         # bbox_tensor,
                         dx1, dy1, dx2, dy2,
@@ -83,6 +83,13 @@ if __name__ == "__main__":
     pnet.to(device)
     pnet.eval()
 
+    rnet = RNet()
+    print(" -------< Loading parameters from {} >------- \n".format(R_model_path))
+    params = torch.load(R_model_path, map_location='cuda:0')
+    rnet.load_state_dict(params, strict=True) 
+    rnet.to(device)
+    rnet.eval()
+
     detect_dataset = PDatasetDetect(annotation_path = anno_train_path,
                                     prefix_path = image_path_prefix)
     detect_loader = DataLoader(dataset = detect_dataset, 
@@ -92,7 +99,6 @@ if __name__ == "__main__":
     
     # final_boxes = []
     for index, batch in enumerate(detect_loader):
-        print("INDEX: ", index)
         img_tensor, p, gtboxes = batch # torch.tensor
         # print(gtboxes.shape)
         p = p[0] #####
@@ -130,7 +136,7 @@ if __name__ == "__main__":
             continue
 
         tot_boxes = torch.vstack(tot_boxes)
-        valid_index = GetNMS(tot_boxes, 0.5, "Union")
+        valid_index = GetNMS(tot_boxes, 0.7, "Union")
         tot_boxes = tot_boxes[valid_index]
         boxw = tot_boxes[:, 2] - tot_boxes[:, 0] + 1
         boxh = tot_boxes[:, 3] - tot_boxes[:, 1] + 1
@@ -160,11 +166,7 @@ if __name__ == "__main__":
 
         # final_boxes.append(boxes_orig[valid_index, :])
         raw_boxes = boxes_orig[valid_index, :]
-        # draw_test(p, raw_boxes)
-        # continue
         raw_img = cv2.imread(p)
-        neg_num_i = 0
-        par_num_i = 0
         for box in raw_boxes:
             x1, y1, x2, y2, _ = box.int()
             x1, y1, x2, y2 = x1.item(), y1.item(), x2.item(), y2.item()
@@ -173,23 +175,17 @@ if __name__ == "__main__":
             bh = y2 - y1 + 1
             if min(bw, bh)<20 or x1<0 or y1<0 or x2>w-1 or y2>h-1:
                 continue
-            # make bbox into square
-            bsize = max(bw, bh)
-            box[2] = x1 + bsize
-            box[3] = y1 + bsize
-            x2, y2 = box[2].int().item(), box[3].int().item()
 
             iou_tensor = GetIoU_t(box, gtboxes)
             iou = torch.max(iou_tensor).item()
             crop_img = raw_img[y1:y2, x1:x2, : ]
             new_img = cv2.resize(crop_img, (24, 24), interpolation=cv2.INTER_LINEAR)
 
-            if iou < 0.3 and neg_num_i<60: # neg #####neg_num necessary?
+            if iou < 0.3 and neg_num<60: # neg #####neg_num necessary?
                 save_path = os.path.join(rnet_negimg_path, "%d.jpg"%neg_num)
                 RNet_data_file.write(save_path + " 0\n")
                 cv2.imwrite(save_path, new_img)
                 neg_num += 1
-                neg_num_i += 1
                 if neg_num%100==0:
                     print("%d neg_img has been generated"%neg_num)
             else:
@@ -212,13 +208,12 @@ if __name__ == "__main__":
                     if pos_num%100==0:
                         print("%d pos_img has been generated"%pos_num)
 
-                elif iou > 0.4 and par_num_i<60: # par
+                elif iou > 0.4: # par
                     save_path = os.path.join(rnet_parimg_path, "%d.jpg"%par_num)
                     RNet_data_file.write(save_path + " -1 %.2f %.2f %.2f %.2f\n"
                                         %(offx1, offy1, offx2, offy2))
                     cv2.imwrite(save_path, new_img)
                     par_num += 1
-                    par_num_i += 1
                     if par_num%100==0:
                         print("%d par_img has been generated"%par_num)
 
@@ -227,5 +222,5 @@ if __name__ == "__main__":
         # boxes = boxes[valid_index, :]
         # aaaaa = torch.where()
 
-RNet_data_file.close()
+ONet_data_file.close()
 

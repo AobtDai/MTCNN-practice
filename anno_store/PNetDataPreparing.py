@@ -73,7 +73,7 @@ def GeneratePosParCandidate(img, box, bboxes, exp_num):
     for _ in range(0, exp_num):
         img_h, img_w, img_c = img.shape
         offsets = [0., 0., 0., 0.] #
-        new_size = np.random.randint(min(box_h, box_w)*0.8, max(box_h, box_w)*1.2) 
+        new_size = np.random.randint(min(box_h, box_w)*0.9, max(box_h, box_w)*1.1) 
         new_y1 = np.random.randint(max(0, y1-new_size/2), min(img_h-new_size/2, y1+new_size/2))
         new_x1 = np.random.randint(max(0, x1-new_size/2), min(img_w-new_size/2, x1+new_size/2))
         crop_box = np.array([new_x1, new_y1, new_x1+new_size, new_y1+new_size])
@@ -82,6 +82,24 @@ def GeneratePosParCandidate(img, box, bboxes, exp_num):
         offsets[2] = (x2 - crop_box[2]) / float(new_size)
         offsets[3] = (y2 - crop_box[3]) / float(new_size)
         SaveNewImg(img, crop_box, bboxes, offsets)
+    
+    new_size = max(box_h, box_w)
+    crop_box = np.array([x1, y1, x1+new_size, y1+new_size])
+    offsets = [0., 0., 0., 0.] #
+    offsets[0] = (x1 - crop_box[0]) / float(new_size)
+    offsets[1] = (y1 - crop_box[1]) / float(new_size)
+    offsets[2] = (x2 - crop_box[2]) / float(new_size)
+    offsets[3] = (y2 - crop_box[3]) / float(new_size)
+    SaveNewImg(img, crop_box, bboxes, offsets)
+
+    new_size = min(box_h, box_w)
+    crop_box = np.array([x1, y1, x1+new_size, y1+new_size])
+    offsets = [0., 0., 0., 0.] #
+    offsets[0] = (x1 - crop_box[0]) / float(new_size)
+    offsets[1] = (y1 - crop_box[1]) / float(new_size)
+    offsets[2] = (x2 - crop_box[2]) / float(new_size)
+    offsets[3] = (y2 - crop_box[3]) / float(new_size)
+    SaveNewImg(img, crop_box, bboxes, offsets)
 
 
 def GenerateNegCandidate(img, bboxes, exp_num):
@@ -99,7 +117,7 @@ if __name__ == "__main__":
 
     with open(anno_train_path, "r") as f:
         annotations = f.readlines()
-
+    # iiii = 0 ## debug flag
     for annotation in annotations:
         annotation = annotation.strip(" ").split(" ")
         img_path = os.path.join(image_path_prefix, annotation[0])
@@ -112,16 +130,20 @@ if __name__ == "__main__":
         _bbox = list(map(int, annotation[2:-1]))
         bboxes = np.array(_bbox).reshape(-1, 4)
 
-        GenerateNegCandidate(img, bboxes, 20)
+        # GenerateNegCandidate(img, bboxes, 5)
         for box in bboxes:
             # print(box)
             x1, y1, x2, y2 = box
             box_w = x2 - x1 + 1
             box_h = y2 - y1 + 1
-            if min(box_w, box_h)<12 or max(box_w, box_h)<40:
+            # if min(box_w, box_h)<12 or max(box_w, box_h)<40:
+            if min(box_w, box_h)<12:
                 continue
             GenerateNegCandidate(img, bboxes, 5)
-            GeneratePosParCandidate(img, box, bboxes, 15)
+            GeneratePosParCandidate(img, box, bboxes, 50)
+        # iiii += 1
+        # if iiii > 10:
+        #     break
 
 PNet_data_file.close()
 
